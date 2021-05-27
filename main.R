@@ -1,37 +1,4 @@
 # devtools::install_github("liupeng2117/SubgroupBoost")
-library(SubgroupBoost)
-
-data("simdata")
-names(simdata)
-str(simdata$train)
-str(simdata$test)
-
-#----- data manipulation-----#
-#training data
-dat.train = simdata[[1]][,-c(1:5)]
-info.train = simdata[[1]][, 1:5]
-dtrain <-
-  xgb.DMatrix(as.matrix(dat.train), label = info.train$trt01p)
-
-#testing data
-dat.test = simdata[[2]][,-c(1:5)]
-info.test = simdata[[2]][, 1:5]
-dtest <- xgb.DMatrix(as.matrix(dat.test), label = info.test$trt01p)
-
-#----- RMST death -----#
-
-dat1 = data.frame(
-  dat.train,
-  trt01p = info.train$trt01p,
-  evnt = info.train$evnt1,
-  aval = info.train$aval1
-)
-set.seed(123)
-model_RMST <- SubgroupBoost.RMST(dat1)
-
-#check variables selected
-importance = xgb.importance(model_RMST$feature_names, model_RMST)$Feature
-importance
 
 
 # real data reproducing ---------------------------------------------------
@@ -240,6 +207,11 @@ g1
 
 ggsave("./Results/logOdds_test.png",g1)
 
+g7 <- ggplot(dat.plot, aes(x=CD4, y = logOdds, color=Antiretroviral_history))+
+  geom_point(size=2, alpha=0.5)+theme(legend.position = 'bottom')
+g7
+ggsave("./Results/logOdds_test_first2.png",g7)
+
 explainer = buildExplainer(
   model_RMST,
   datTrain$DatMat,
@@ -260,6 +232,10 @@ g2 <- ggplot(dat.plot.train, aes(x=CD4, y=weight, color =subgroup, shape = Antir
 g2
 ggsave("./Results/logOdds_train.png",g2)
 
+g8 <- ggplot(dat.plot.train, aes(x=CD4, y = logOdds, color=Antiretroviral_history))+
+  geom_point(size=2, alpha=0.5)+theme(legend.position = 'bottom')
+g8
+ggsave("./Results/logOdds_train_first2.png",g8)
 
 # remove high leverage data -----------------------------------------------
 dat.robust = dat.real[dat.real$cd40<1000,]
@@ -272,6 +248,7 @@ set.seed(123)
 model_RMST_robust <- SubgroupBoost.RMST(dtrain)
 importanceReal_robust = xgb.importance(model_RMST_robust$feature_names, model_RMST_robust)
 importanceReal_robust
+importance_plot = xgb.plot.importance(importanceReal_robust)
 
 library(xgboostExplainer)
 datTrain = prepareData(dtrain)
@@ -295,6 +272,10 @@ g3 <- ggplot(dat.plot.train.robust, aes(x=CD4, y=weight, color =subgroup, shape 
   geom_point(size=2)+theme(legend.position = 'bottom')
 g3
 ggsave("./Results/logOdds_test_robust.png",g3)
+g6 <- ggplot(dat.plot.train.robust, aes(x=CD4, y = logOdds, color=Antiretroviral_history))+
+  geom_point(size=2, alpha=0.5)+theme(legend.position = 'bottom')
+g6
+ggsave("./Results/logOdds_test_robust_first2.png",g6)
 
 pred.breakdown.robust = explainPredictions(model_RMST_robust, explainer, datTrain$DatMat)
 logOdds = rowSums(pred.breakdown.robust)
@@ -307,3 +288,15 @@ g4 <- ggplot(dat.plot.train.robust, aes(x=CD4, y=weight, color =subgroup, shape 
   geom_point(size=2)+theme(legend.position = 'bottom')
 g4
 ggsave("./Results/logOdds_train_robust.png",g4)
+
+g5 <- ggplot(dat.plot.train.robust, aes(x=CD4, y = logOdds, color=Antiretroviral_history))+
+  geom_point(size=2, alpha=0.5)+theme(legend.position = 'bottom')
+g5
+ggsave("./Results/logOdds_train_robust_first2.png",g5)
+
+
+
+# traditional approach ----------------------------------------------------
+
+preds = predict(model_RMST_robust, datTrain$DatMat)
+preds
