@@ -58,7 +58,21 @@ ggsave("Results/simulation_trainSet_top2.png", p2)
 preds.test = predict(model_RMST, as.matrix(dat.test))
 dat2 = data.frame(dat.test,
                   logOdds=preds.test,
-                  subGroup = ifelse(preds.test>0, "+","-"))
+                  subGroup = ifelse(preds.test>0, "+","-"),
+                  subGroups = ifelse(preds.test>0, 1,0))
+xnew <- expand.grid(s1 = seq(range(dat2$s1)[1], range(dat2$s1)[2], by=.1),
+                    z18 = seq(range(dat2$z18)[1], range(dat2$z18)[2], by=0.1))
+xmeans <- matrix(rep(t(colMeans(dat.test)), nrow(xnew)), nrow = nrow(xnew), byrow = T)
+colnames(xmeans) = colnames(dat.test)
+dat.new = as.data.frame(xmeans)#
+
+dat.new[,c("s1", "z18")] = xnew
+
+preds.new = predict(model_RMST, as.matrix(dat.new))
+dat3 = data.frame(dat.new,
+                  logOdds=preds.new,
+                  subGroup = ifelse(preds.new>0, "+","-"),
+                  subGroups = ifelse(preds.new>0, 1,0))
 library(ggplot2)
 
 p1.test <- 
@@ -73,4 +87,18 @@ p2.test
 ggsave("Results/simulation_testSet_top2.png", p2.test)
 
 
+p3.test <-
+  ggplot(dat3, aes(s1, z18, z=subGroups))+
+  geom_contour(breaks = .5, size=2)+
+  geom_point(data = dat2, aes(s1, z18, color = subGroup),alpha=0.5)
+p3.test
+ggsave("Results/simulation_testSet_top2_withDecisionBoundary.png", p3.test)
 
+p4 <- ggplot(dat3, aes(s1, z18)) +
+  geom_raster(aes(fill=logOdds)) +
+  scale_fill_distiller(palette = "Spectral", direction = -1)+
+  geom_point(data = dat2, aes(s1, z18, color = subGroup),alpha=0.5)+
+geom_contour(aes(z=subGroups),color='black',breaks = .5, size=2)
+  
+p4
+ggsave("Results/simulation_testSet_top2_raster.png", p4)
