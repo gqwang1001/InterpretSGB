@@ -349,9 +349,10 @@ p2.realdata <-
 p2.realdata
 
 
-# SHAP approach -----------------------------------------------------------
+# SHAP approach ---------------------------------------------------------
 
 source("InterpretSGB/shap.R")
+library(ggplot2)
 library(SHAPforxgboost)
 library(dplyr)
 # data.shap = as.matrix(sim62[[2]][idx, m62$feature_names])
@@ -361,8 +362,9 @@ shap_int <- shap.prep.interaction(xgb_mod = model_RMST, X_train = data.shap)
 shap_results = shap.score.rank(
   xgb_model = model_RMST,
   X_train = data.shap,
-  shap_approx = F
+  shap_approx = T
 )
+
 var_importance(shap_results, top_n = 10)+ggtitle("Importance by SHAP")
 ggsave("Results/aids_SHAP_importancePlot.png")
 
@@ -437,7 +439,10 @@ sorted_plot_data <- plot_data[order(plot_data$ID),]
 # 
 
 
-
+# shap  -----------------------------------------------------------------
+library(xgboost)
+xgb.plot.importance(model_RMST)
+xgb.plot.shap.summary(data = data.shap, model = model_RMST, top_n = 10)
 
 
 

@@ -133,5 +133,12 @@ ggsave("Results/sim62_test_results_shap_clustering.png", p62.1.shap)
 
 # use xgboost package
 png("Results/ShapplotPKG.png")
-shapPlotPKG = xgb.plot.shap(data = as.matrix(sim62[[2]][, m62$feature_names]), model = m62)
+shapPlotPKG = xgb.plot.shap(data = as.matrix(sim62[[2]][, m62$feature_names]), model = m62, top_n = 20, plot = F)
 dev.off()
+
+shapPlotPKG = xgb.plot.shap(data = as.matrix(sim62[[2]][, m62$feature_names]), model = m62, top_n = 25, plot = F)
+shapresults = apply(shapPlotPKG$shap_contrib, 2, function(c) mean(abs(c)))
+sort(shapresults, decreasing = T)
+cumsum(sort(shapresults, decreasing = T)/sum(shapresults))
+
+
