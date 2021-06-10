@@ -358,6 +358,12 @@ library(dplyr)
 # data.shap = as.matrix(sim62[[2]][idx, m62$feature_names])
 data.shap = as.matrix(dtrain[,model_RMST$feature_names])
 shap_values = shap.values(model_RMST, data.shap)
+
+cumsum(as.vector(shap_values$mean_shap_score)/as.numeric(sum(shap_values$mean_shap_score)+shap_values$BIAS0)*100)
+cumsum(as.vector(shap_values$mean_shap_score)/as.numeric(sum(shap_values$mean_shap_score))*100)
+
+
+
 shap_int <- shap.prep.interaction(xgb_mod = model_RMST, X_train = data.shap)
 shap_results = shap.score.rank(
   xgb_model = model_RMST,
@@ -443,6 +449,3 @@ sorted_plot_data <- plot_data[order(plot_data$ID),]
 library(xgboost)
 xgb.plot.importance(model_RMST)
 xgb.plot.shap.summary(data = data.shap, model = model_RMST, top_n = 10)
-
-
-

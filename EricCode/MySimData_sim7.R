@@ -126,7 +126,7 @@ MySimData <-function(N,M,enrollment,follow,lambda0,p,rho,alpha0,eta,mu1,mu2,mu3,
   otr.test <- otr.ind[(M+1):N]
   
   
-  return( list(train.dat,test.dat,otr.train,otr.test)   )
+  return( list(train.dat,test.dat,otr.train,otr.test))
 }
 
 
@@ -148,5 +148,7 @@ MySimData <-function(N,M,enrollment,follow,lambda0,p,rho,alpha0,eta,mu1,mu2,mu3,
 # mu4 <- 1
 # mu0 <- sqrt(6)
 # 
+set.seed(2021)
+data.simulation <-MySimData(N,M,enrollment,follow,lambda0,p,rho,alpha0,eta,mu1,mu2,mu3,mu4,mu0)
 
 

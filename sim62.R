@@ -118,8 +118,9 @@ sorted_plot_data <- plot_data[order(plot_data$ID),]
 # test62$subGroup_SHAP = ifelse(sorted_plot_data$group==1,"+","-")
 test62$subGroup_SHAP = as.factor(sorted_plot_data$group)
 
-acc = with(test62, mean(1*(subGroup_SHAP==trueLabel)))
+acc = with(test62, mean(1*(subGroup==trueLabel)))
 acc
+
 acc.sd = with(test62, sd(1*(subGroup_SHAP==trueLabel)))
 acc.sd/sqrt(500)
 
@@ -131,14 +132,40 @@ p62.1.shap
 
 ggsave("Results/sim62_test_results_shap_clustering.png", p62.1.shap)
 
-# use xgboost package
-png("Results/ShapplotPKG.png")
-shapPlotPKG = xgb.plot.shap(data = as.matrix(sim62[[2]][, m62$feature_names]), model = m62, top_n = 20, plot = F)
-dev.off()
+# use xgboost package -------------------------------------------------------
+# png("Results/ShapplotPKG.png")
+# shapPlotPKG = xgb.plot.shap(data = as.matrix(sim62[[2]][, m62$feature_names]), model = m62, top_n = 20, plot = F)
+# dev.off()
 
-shapPlotPKG = xgb.plot.shap(data = as.matrix(sim62[[2]][, m62$feature_names]), model = m62, top_n = 25, plot = F)
-shapresults = apply(shapPlotPKG$shap_contrib, 2, function(c) mean(abs(c)))
+shapPlotPKG = xgb.plot.shap(data = as.matrix(sim62[[1]][, m62$feature_names]), model = m62, top_n = 25, plot = F)
+shapresults = colMeans(abs(shapPlotPKG$shap_contrib))
 sort(shapresults, decreasing = T)
-cumsum(sort(shapresults, decreasing = T)/sum(shapresults))
+shap_cumsum=cumsum(sort(shapresults, decreasing = T)/sum(shapresults))
+cutoff = 0.8
+valNames = names(shap_cumsum)
+imp.val = valNames[which(shap_cumsum<cutoff)]
 
+# fit decision tree -------------------------------------------------------
+library(caret)
+library(rpart.plot)
+library(rattle)
+dataInPred = data.frame(shapPlotPKG$data[, imp.val],
+                        logOdds = rowSums(shapPlotPKG$shap_contrib))
+trctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+set.seed(1)
+dtree_fit <- train(logOdds~., data = dataInPred, 
+                   method = "rpart",
+                   trControl=trctrl,
+                   tuneLength = 10)
+summary(dtree_fit)
+fancyRpartPlot(dtree_fit$finalModel)
+pred.simple = predict(dtree_fit, sim62[[2]])
+
+sse =  mean((pred.simple[-(1:1000)]-test62$logOdds))
+
+acc =  mean(1*((pred.simple[-(1:1000)]>0)==(test62$trueLabel=="+")))
+acc
+
+acc.pred =  mean(1*(((pred.simple[-(1:1000)]>0)==(test62$logOdds>0))))
+acc.pred
 

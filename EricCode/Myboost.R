@@ -15,7 +15,7 @@
 ##---------------------------##
 #     Return Values          #
 ##---------------------------##
-# Return a vector with 2 elements, first one for wherther signal has top rank of variable impoertance
+# Return a vector with 2 elements, first one for whether signal has top rank of variable importance
 # second is a classification error in terms of signal group 
 
 
