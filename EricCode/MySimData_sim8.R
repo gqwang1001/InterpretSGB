@@ -49,32 +49,57 @@ library(survival)
 #----------------------------------------------------------------------#
 
 
-MySimData <-function(N,M,enrollment,follow,lambda0,p,rho,alpha0,eta,mu0){
+MySimData <-function(N,M,enrollment,follow,lambda0,p,rho,alpha0,eta,mu1,mu2,mu3,mu4,mu0){
   trt01p <-rbinom(n=N, 1, prob=0.5)
   #trt01p[trt01p==0]<- -1
   dat <- data.frame(id=1:N,trt01p)
   dat$stdt <- runif(n=N, min=0, max=enrollment)
   
   ## Simulate Z ##
-  cov.z  <- (1-rho)*diag(rep(1,(p+1)   )) + rho*rep(1,(p+1) )%*%t(rep(1,(p+1) ))
-  Z <- mvrnorm(n = N, mu=rep(0,(p+1) ), Sigma=cov.z, tol = 1e-6)
+  cov.z  <- (1-rho)*diag(rep(1,(p+2) )) + rho*rep(1,  (p+2) )%*%t(rep(1,  (p+2) ))
+  Z <- mvrnorm(n = N, mu=rep(0, (p+2)  ), Sigma=cov.z, tol = 1e-6)
   
   s1 <- Z[,1]
-  Z <- Z[,-1]
+  s2 <- Z[,2]
+  Z <- Z[,-c(1,2)]
   
-
-
-   sub1 <- (s1>=0)
-   sub2 <- (s1<0)
-   otr <- 1*(sub1)
+  # ## Pattern 3 ##
+   q20 <- -0.84
+   q25 <- -0.67
+   q40<- -0.25
+   q60 <- 0.25
+   q75<- 0.67
+   q80<- 0.84
+     
+   sub1 <- (s1<0 & s2>=q25)
+   sub2 <- (s1>=0 & s2>=q25)
+   sub3 <- (s1<0 & s2<q25)
+   sub4 <- (s1>=0 & s2<q25)
+   otr <- 1*(sub2 | sub3)
    
- 
+  ## Pattern 2 ##
+  # q25 <- -0.677
+  # q75<- 0.677
+  # sub1 <- (s1>=0 & s2<0) | (s1<0 & s2>=q25 & s2<0)
+  # sub2 <- (s1>=0 & s2>=0) | (s1<0 & s2<q75 & s2>=0)
+  # sub3 <- (s1<0 & s2 < q25)
+  # sub4 <- (s1<0 & s2 >= q75)
+
+
+  
   
   dat$tte<-NA
+  n1 <- sum(sub1)
+  n2 <- sum(sub2)
+  n3 <- sum(sub3)
+  n4 <- sum(sub4)
+  
+  dat$tte[sub1] <- exp( mu0 + mu1*dat$trt01p[sub1] + alpha0*rnorm(n1))
+  dat$tte[sub2] <- exp( mu0 + mu2*dat$trt01p[sub2] + alpha0*rnorm(n2))
+  dat$tte[sub3] <- exp( mu0 + mu3*dat$trt01p[sub3] + alpha0*rnorm(n3))
+  dat$tte[sub4] <- exp( mu0 + mu4*dat$trt01p[sub4] + alpha0*rnorm(n4))
 
-  dat$tte <- exp( mu0 + dat$trt01p*(  s1    ) + alpha0*rnorm(N))
-
-
+  
 
   analysistime <- enrollment+follow
   
@@ -91,10 +116,16 @@ MySimData <-function(N,M,enrollment,follow,lambda0,p,rho,alpha0,eta,mu0){
   dat.old <- dat
   dat.old$otr <- as.factor(otr)
   dat <- dat[,c('trt01p','evnt','aval')]
-  #dat <- cbind(dat,s1,s2,Z)
-  dat <- cbind(dat,s1,Z)
-  #colnames(dat)[6:(p+5)] <- c(paste0("z", 1:p))
-  colnames(dat)[5:(p+4)] <- c(paste0("z", 1:p))
+
+  if(exists("s2")){
+    dat <- cbind(dat,s1,s2,Z)
+    colnames(dat)[6:(p+5)] <- c(paste0("z", 1:p))
+  } else {
+    dat <- cbind(dat,s1,Z)
+    colnames(dat)[5:(p+4)] <- c(paste0("z", 1:p))
+    
+  }
+
   ### Check Results ###
   #fit.surv <- coxph( Surv(time=aval, event=evnt) ~ factor(trt01p), data=dat)
   #summary(fit.surv)
@@ -119,5 +150,22 @@ MySimData <-function(N,M,enrollment,follow,lambda0,p,rho,alpha0,eta,mu0){
 #----------------------------------------------------------------------#
 #                     Step 2: Run a test                   #
 #----------------------------------------------------------------------#
+# N<-5500
+# M <- 500
+# enrollment<-12
+# follow <- 18
+# lambda0<-0.1
+# p <- 20                                                # p is the # of covariates interacting with Treatment
+# rho <- 1/3                                             # rho is the correlation parameter
+# alpha0 <- sqrt(2)
+# eta <- -log(.9)/12
+# mu1 <- 1
+# mu2 <- -1
+# mu3 <- -1
+# mu4 <- 1
+# mu0 <- sqrt(6)
+# 
 set.seed(2021)
-data.simulation <- MySimData(N=5500,M=500,enrollment=12,follow=18,lambda0=0.1,p=50,rho=1/3,alpha0=0.4,eta=-log(.9)/12,mu0=sqrt(6))
+data.simulation <- MySimData(N=5500,M=500,enrollment=12,follow=18,lambda0=0.1,p=50,rho=1/3,alpha0=0.4,eta=-log(.9)/12,mu1=-1,mu2=1,mu3=1,mu4=-1,mu0=sqrt(6))
+
+

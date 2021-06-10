@@ -125,21 +125,19 @@ MySimData <-function(N,M,enrollment,follow,lambda0,p,rho,alpha0,eta,mu0){
 #----------------------------------------------------------------------#
 #                     Step 2: Run a test                   #
 #----------------------------------------------------------------------#
-N<-5500
-M <- 500
-enrollment<-12
-follow <- 18
-lambda0<-0.1
-p <- 20                                                # p is the # of covariates interacting with Treatment
-rho <- 1/3                                             # rho is the correlation parameter
-alpha0 <- sqrt(2)
-eta <- -log(.9)/12
-mu1 <- 1
-mu2 <- -1
-mu3 <- -1
-mu4 <- 1
-mu0 <- sqrt(6)
 # 
-sim62 <-MySimData(N,M,enrollment,follow,lambda0,p,rho,alpha0,eta,mu0)
-  
+data.simulation <-
+  MySimData(
+    N = 5500,
+    M = 500,
+    enrollment = 12,
+    follow = 18,
+    lambda0 = 0.1,
+    p = 50,
+    rho = 1 / 3,
+    alpha0 = 0.4,
+    eta = -log(.9) / 12,
+    mu0 = sqrt(6)
+  )
+
 

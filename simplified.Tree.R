@@ -1,7 +1,7 @@
 simplified.Tree = function(model,
                            datalist,
                            cutoff = 0.8,
-                           plot = T,
+                           plot.name = NaN,
                            seed = 1) {
   require(caret)
   require(rpart.plot)
@@ -35,9 +35,10 @@ simplified.Tree = function(model,
     tuneLength = 10
   )
   # summary(dtree_fit)
-  figure = NaN
-  if (plot == T) {
-    figure = fancyRpartPlot(dtree_fit$finalModel)
+  if (!is.na(plot.name)) {
+    png(filename = plot.name)
+    fancyRpartPlot(dtree_fit$finalModel)
+    dev.off()
   }
   
   pred.simple = predict(dtree_fit, datalist[[2]])
@@ -48,12 +49,12 @@ simplified.Tree = function(model,
   acc.xgb = mean(1 * ((pred.xgb > 0) == datalist[[4]]))
   acc.comparison=mean(1*(((pred.simple > 0) == (pred.xgb > 0))))
   
+  
   return(
     list(
       imporant_variables = imp.val,
       simplified_tree = dtree_fit,
       stree_pred = pred.simple,
-      tree_figure = figure,
       RMSE = rmse,    
       accuracy_xgb = acc.xgb,
       accuracy_simplifiedTree = acc.simplifiedTree,
