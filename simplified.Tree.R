@@ -2,7 +2,8 @@ simplified.Tree = function(model,
                            datalist,
                            cutoff = 0.8,
                            plot.name = NaN,
-                           seed = 1) {
+                           seed = 1,
+                           top3 = T) {
   require(caret)
   require(rpart.plot)
   require(rattle)
@@ -19,6 +20,8 @@ simplified.Tree = function(model,
   valNames <- names(shap_cumsum)
   imp.val <- valNames[which(shap_cumsum < cutoff)]
   
+  if (top3 & length(imp.val)>=3) imp.val=imp.val[1:3]
+  if (top3 &!is.na(plot.name)) plot.name = paste0("Top3_",plot.name)
   # fit decision tree -------------------------------------------------------
   dataInPred <- data.frame(shapPlotPKG$data[, imp.val],
                           logOdds = rowSums(shapPlotPKG$shap_contrib))

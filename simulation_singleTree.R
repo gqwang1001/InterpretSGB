@@ -33,7 +33,7 @@ for (i in 1:6) {
     model = model,
     datalist = data.simulation,
     cutoff = 0.95,
-    plot = T,
+    plot.name = paste0("Results/", simIdx,"_simplified_tree.png"),
     seed = 1
   )
   
@@ -82,14 +82,14 @@ for (i in 1:6) {
   
   p.spltree <- ggplot(test.data, aes_string(impvars[1], impvars[2])) +
     geom_point(aes(color = spltree_pred), alpha = 0.5) +
-    ggtitle("Predicted Label by Simplifed Tree")+
+    ggtitle("Predicted Label by Simplifed Tree with Top 3 Features")+
     geom_label(aes(x = mean(test.data[,impvars[1]]), y = min(test.data[,impvars[2]])), label = paste("Accuracy =", spltree$accuracy_simplifiedTree))
   # p.spltree
   
   p.fitted.comparison.spltree <-
     gridExtra::grid.arrange(p.truth, p.fitted, p.spltree, nrow = 1)
   ggsave(
-    paste0("Results/", simIdx, "_test_splfTree.png"),
+    paste0("Results/", simIdx, "_test_splfTree_top3.png"),
     p.fitted.comparison.spltree,
     width = 21,
     height = 6.5
