@@ -2,18 +2,16 @@ library(SubgroupBoost)
 expit = function(logodds)
   1 / (1 + exp(-logodds))
 source("InterpretSGB/simplified.Tree.R")
-
-simList = paste0("sim", c(32, 42, 43, 62, 7, 8))
-
+simList = paste0("sim", c(101,102,103,104, 32, 42, 43, 62, 7, 8))
+seeds = 79
 # Train model -------------------------------------------------------------
 
 for (i in 1:6) {
   simIdx = simList[i]
   source(paste0("InterpretSGB/EricCode/MySimData_", simIdx, ".R"))
-  set.seed(2021)
   # idx = 1:1e3
   # model <- SubgroupBoost.RMST(data.simulation[[2]][idx,])
-  model <- SubgroupBoost.RMST(data.simulation[[1]])
+  model <- SubgroupBoost.RMST_local(data.simulation[[1]])
   saveRDS(model, file = paste0("Results/modelFitting_", simIdx, ".rds"))
 }
 
@@ -21,9 +19,11 @@ for (i in 1:6) {
 for (i in 1:6) {
   simIdx = simList[i]
   print(simIdx)
+  set.seed(seeds)
   source(paste0("InterpretSGB/EricCode/MySimData_", simIdx, ".R"))
   model = readRDS(paste0("Results/modelFitting_", simIdx, ".rds"))
   imp <- xgb.importance(model$feature_names, model)
+  imp
   # imp # finds s1 s2
   # xgb.plot.importance(imp, main = "Importance Plot by Gain")
   # xgb.plot.tree(model = model,
@@ -33,11 +33,20 @@ for (i in 1:6) {
     model = model,
     datalist = data.simulation,
     cutoff = 0.95,
-    plot.name = paste0("Results/", simIdx,"_simplified_tree.png"),
-    seed = 1
+    # plot.name = paste0("Results/", simIdx,"_simplified_tree.png"),
+    seed = seeds
   )
+  # saveRDS(spltree, file = paste0("Results/", simIdx,"/", seeds,".rds"))
+  # saveRDS(spltree, file = paste0("Results/", seeds,".rds"))
   
-  impvars = spltree$imporant_variables[1:2]
+  ranks = var.rank(spltree,"s2")
+  do.call("c",var.rank(spltree,"s2"))
+  
+  impvars = spltree$imporant_variables
+  impvars
+  
+  spltree$imporant_variables_sptree
+  spltree$imporant_variables_xgb_all
   
   # predicts on test set ----------------------------------------------------
   idx = 1:5e3

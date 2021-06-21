@@ -79,7 +79,7 @@ MySim <- function(rep){
 task_id <- as.integer(Sys.getenv("SGE_TASK_ID"))
 set.seed(task_id)
 
-res<-sapply(1:5,MySim )
+res<-sapply(1:5,MySim)
 
 setwd("/SFS/scratch/zhapingy/sim8/res")
 save.image(file = paste0(task_id,".RData"))

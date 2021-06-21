@@ -256,7 +256,8 @@ SubgroupBoost.RMST_local <-
         eval_metric = evalerror,
         maximize = F,
         verbose = 0,
-        early_stopping_rounds = 5
+        early_stopping_rounds = 5,
+        nthread=4
       )
       hyper_grid$optimal_trees[i] <-
         which.min(xgb.tune$evaluation_log$test_OTR_error_mean)
