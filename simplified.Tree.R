@@ -8,8 +8,10 @@ simplified.Tree = function(model,
   # require(rpart.plot)
   # require(rattle)
   require(xgboost)
+  require(vip)
   library(xgboost)
   library(caret)
+  library(dplyr)
   
   options(warn = -1)
   shapPlotPKG <- xgb.plot.shap(
@@ -19,22 +21,26 @@ simplified.Tree = function(model,
     plot = F
   )
   shapresults <- colMeans(abs(shapPlotPKG$shap_contrib))
-  shap_cumsum <- cumsum(sort(shapresults, decreasing = T) / sum(shapresults))
+  shap_cumsum <-
+    cumsum(sort(shapresults, decreasing = T) / sum(shapresults))
   valNames <- names(shap_cumsum)
   imp.val <- valNames[which(shap_cumsum < cutoff)]
   
   imp.gain <- xgb.importance(model$feature_names, model)
-  imp.gain.top = imp.gain$Feature[1:3]
+  imp.gain.top = imp.gain$Feature[1:min(10,length(imp.gain$Feature))]#[1:5]
   
-  if (top3 & length(imp.val)>=3) imp.val=imp.val[1:3]
-  if (top3 &!is.na(plot.name)) plot.name = paste0("Top3_",plot.name)
-  if (length(imp.val)==1) imp.val = valNames[1:2]
+  if (top3 & length(imp.val) >= 3)
+    imp.val = imp.val[1:3]
+  if (top3 & !is.na(plot.name))
+    plot.name = paste0("Top3_", plot.name)
+  if (length(imp.val) == 1)
+    imp.val = valNames[1:2]
   
-  # fit decision tree -------------------------------------------------------
   dataInPred <- data.frame(shapPlotPKG$data[, imp.val],
-                          logOdds = rowSums(shapPlotPKG$shap_contrib))
-  dataInPred.gain <- data.frame(shapPlotPKG$data[, imp.gain.top],
                            logOdds = rowSums(shapPlotPKG$shap_contrib))
+  # fit decision tree -------------------------------------------------------
+  dataInPred.gain <- data.frame(shapPlotPKG$data[, imp.gain.top],
+                                logOdds = rowSums(shapPlotPKG$shap_contrib))
   trctrl <-
     trainControl(method = "repeatedcv",
                  number = 10,
@@ -43,19 +49,18 @@ simplified.Tree = function(model,
   dtree_fit <- train(
     logOdds ~ .,
     data = dataInPred,
-    method = "rpart",
+    method = "rpart2",
     trControl = trctrl,
-    tuneLength = 10
+    tuneLength = 3
   )
   
   dtree_fit_gain <- train(
     logOdds ~ .,
     data = dataInPred.gain,
-    method = "rpart",
+    method = "rpart2",
     trControl = trctrl,
-    tuneLength = 10
+    tuneLength = 3
   )
-  
   
   # summary(dtree_fit)
   if (!is.na(plot.name)) {
@@ -68,49 +73,61 @@ simplified.Tree = function(model,
   pred.simple = predict(dtree_fit, datalist[[2]])
   pred.simple.gain = predict(dtree_fit_gain, datalist[[2]])
   
-  pred.xgb <- predict(model, as.matrix(datalist[[2]][,model$feature_names]))
+  pred.xgb <-
+    predict(model, as.matrix(datalist[[2]][, model$feature_names]))
   
-  rmse =  RMSE(pred.simple, pred.xgb)
-  acc.simplifiedTree = mean(1 * ((pred.simple > 0) == datalist[[4]]))
-  acc.simplifiedTree.gain = mean(1 * ((pred.simple.gain > 0) == datalist[[4]]))
+  rmse.splTreeVsxgb =  RMSE(pred.simple, pred.xgb)
+  summaryPred.splTree.shap = summaryPred(pred.simple, datalist)
+  summaryPred.splTree.gain = summaryPred(pred.simple.gain, datalist)
+  summaryPred.xgb = summaryPred(pred.xgb, datalist)
   
-  acc.xgb = mean(1 * ((pred.xgb > 0) == datalist[[4]]))
-  acc.comparison=mean(1*(((pred.simple > 0) == (pred.xgb > 0))))
+  acc.comp.splTreeVsxgb = 2 * sum(1 * (((pred.simple > 0) == (pred.xgb > 0)))) /
+    (length(pred.simple) + length(pred.xgb))
   
+  # fit linear regression model ---------------------------------------------
+  fit.lm.full = lm(data = dataInPred, logOdds ~ .)
+  fit.lm = step(fit.lm.full, trace = 0)
   
-  sen.spl <- sum(pred.simple>=0 & datalist[[4]]==1)/sum(datalist[[4]]==1)
-  spe.spl <- sum(pred.simple<0 & datalist[[4]]==0)/sum(datalist[[4]]==0)
-  sen.xgb <- sum(pred.xgb>=0 & datalist[[4]]==1)/sum(datalist[[4]]==1)
-  spe.xgb <- sum(pred.xgb<0 & datalist[[4]]==0)/sum(datalist[[4]]==0)
-  sen.spl.gain <- sum(pred.simple.gain>=0 & datalist[[4]]==1)/sum(datalist[[4]]==1)
-  spe.spl.gain <- sum(pred.simple.gain<0 & datalist[[4]]==0)/sum(datalist[[4]]==0)
+  pred.lm = predict(fit.lm, datalist[[2]])
+  acc.comp.lm = 2 * sum(1 * (((pred.lm > 0) == (pred.xgb > 0)))) /
+    (length(pred.lm) + length(pred.xgb))
+  rmse.lmVsxgb =  RMSE(pred.lm, pred.xgb)
+  summaryPred.lm = summaryPred(pred.lm, datalist)
+  
   
   return(
     list(
       xgbModel = model,
       imporant_variables = imp.val,
       imporant_variables_xgb_all = valNames,
-      imporant_variables_sptree = dtree_fit$finalModel$variable.importance,
-      imporant_variables_sptree_gain = dtree_fit_gain$finalModel$variable.importance,
+      imporant_variables_sptree = vip::vi_shap(dtree_fit$finalModel, pred_wrapper = predict) %>% filter(Importance!=0) %>% arrange(desc(Importance)),
+      imporant_variables_sptree_gain = vip::vi_shap(dtree_fit_gain$finalModel, pred_wrapper = predict) %>% filter(Importance!=0) %>% arrange(desc(Importance)),
       
       simplified_tree = dtree_fit,
       simplified_tree_gain = dtree_fit_gain,
-      
       stree_pred = pred.simple,
-      RMSE = rmse,    
-      accuracy_xgb = acc.xgb,
-      accuracy_simplifiedTree = acc.simplifiedTree,
-      accuracy_simplifiedTree_gain = acc.simplifiedTree.gain,
       
-      sensitivity_xgb = sen.xgb,
-      sensitivity_simplifiedTree = sen.spl,   
-      sensitivity_simplifiedTree_gain = sen.spl.gain,     
+      summaryPred.xgb = summaryPred.xgb,
+      summaryPred.splTree.shap = summaryPred.splTree.shap,
+      summaryPred.splTree.gain = summaryPred.splTree.gain,
       
-      specificity_xgb = spe.xgb,
-      specificity_simplifiedTree = spe.spl,
-      specificity_simplifiedTree_gain = spe.spl.gain,
+      acc.comp.splTreeVsxgb = acc.comp.splTreeVsxgb,
+      RMSE.spltree = rmse.splTreeVsxgb,
       
-      acc_comparison = acc.comparison
+      lm_pred = pred.lm,
+      acc.comp.lm = acc.comp.lm,
+      RMSE.lm = rmse.lmVsxgb,
+      summaryPred.lm = summaryPred.lm,
+      lmModel = fit.lm
     )
   )
+}
+
+
+summaryPred = function(pred, datalist) {
+  return(list(
+    accuracy = mean(1 * ((pred > 0) == datalist[[4]])),
+    sensitivity = sum(pred >= 0 & datalist[[4]] == 1) / sum(datalist[[4]] == 1),
+    specificity = sum(pred < 0 & datalist[[4]] == 0) / sum(datalist[[4]] == 0)
+  ))
 }

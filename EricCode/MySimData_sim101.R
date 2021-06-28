@@ -147,7 +147,7 @@ data.simulation <-
     follow = 18,
     lambda0 = 0.1,
     p = 50,
-    rho = 1 / 3,
+    rho = 1/3,
     alpha0 = 0.4,
     eta = -log(.9) / 12,
     mu0 = sqrt(6),

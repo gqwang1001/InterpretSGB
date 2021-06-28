@@ -88,8 +88,6 @@ MySimData <-
     
     dat$tte <- exp(mu0 + dat$trt01p * (s1) + alpha0 * rnorm(N))
     
-    
-    
     analysistime <- enrollment + follow
     
     ## Simulate Censoring ##
@@ -147,9 +145,9 @@ data.simulation <-
     follow = 18,
     lambda0 = 0.1,
     p = 50,
-    rho = 1 / 3,
+    rho = 0,#1/3
     alpha0 = 0.4,
     eta = -log(.9) / 12,
     mu0 = sqrt(6),
-    betas = c(1, 1, 1/3, 1/3, 1/3)*3
+    betas = c(5,4,3,2,1)*2
   )

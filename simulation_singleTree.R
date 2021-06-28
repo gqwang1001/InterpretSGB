@@ -2,12 +2,13 @@ library(SubgroupBoost)
 expit = function(logodds)
   1 / (1 + exp(-logodds))
 source("InterpretSGB/simplified.Tree.R")
-simList = paste0("sim", c(101,102,103,104, 32, 42, 43, 62, 7, 8))
+simList = paste0("sim", c(105, 106,107,101,102,103,104, 32, 42, 43, 62, 7, 8))
 seeds = 79
 # Train model -------------------------------------------------------------
 
 for (i in 1:6) {
   simIdx = simList[i]
+  set.seed(seeds)
   source(paste0("InterpretSGB/EricCode/MySimData_", simIdx, ".R"))
   # idx = 1:1e3
   # model <- SubgroupBoost.RMST(data.simulation[[2]][idx,])
@@ -34,12 +35,44 @@ for (i in 1:6) {
     datalist = data.simulation,
     cutoff = 0.95,
     # plot.name = paste0("Results/", simIdx,"_simplified_tree.png"),
-    seed = seeds
+    seed = seeds,
+    top3 = F
   )
   # saveRDS(spltree, file = paste0("Results/", simIdx,"/", seeds,".rds"))
   # saveRDS(spltree, file = paste0("Results/", seeds,".rds"))
   
-  ranks = var.rank(spltree,"s2")
+  spltree$imporant_variables
+  spltree$imporant_variables_sptree
+  spltree$imporant_variables_sptree_gain
+  
+  
+  spltree$RMSE.lm
+  spltree$RMSE.spltree
+  spltree$summaryPred.lm$accuracy
+  spltree$summaryPred.splTree.shap$accuracy
+  spltree$summaryPred.splTree.gain$accuracy
+  spltree$summaryPred.xgb$accuracy
+  spltree$acc.comp.lm
+  spltree$acc.comp.splTreeVsxgb
+
+
+  spltree$imporant_variables_xgb_all
+  
+    finaltree = spltree$simplified_tree$finalModel
+  split.var = unique(finaltree$frame$var[finaltree$frame$var!="<leaf>"])
+  
+  rattle::fancyRpartPlot(finaltree)
+  rattle::fancyRpartPlot(spltree$simplified_tree_gain$finalModel)
+  
+  sum.finaltree = rpart::printcp(finaltree)
+
+    summary(finaltree)
+  finaltree$splits[1,]
+  varImp(spltree$simplified_tree$finalModel)
+  
+  vi.shap = vip::vi_shap(finaltree, pred_wrapper = predict) %>% filter(Importance!=0) %>% arrange(desc(Importance))
+  
+ ranks = var.rank(spltree,"s2")
   do.call("c",var.rank(spltree,"s2"))
   
   impvars = spltree$imporant_variables

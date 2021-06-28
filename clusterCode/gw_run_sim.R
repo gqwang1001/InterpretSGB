@@ -28,7 +28,6 @@ for (iseeds in (seeds - 1) * nrep + (1:nrep)) {
     set.seed(iseeds)
     source(paste0("EricCode/MySimData_", simIdx, ".R"))
     model <- SubgroupBoost.RMST_local(data.simulation[[1]])
-    
     spltree = simplified.Tree(
       model = model,
       datalist = data.simulation,

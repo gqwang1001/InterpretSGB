@@ -77,8 +77,12 @@ MySimData <-
       tol = 1e-6
     )
     
-    s1 <- Z[,1:nbeta] %*% betas
     colnames(Z) = c(paste0("z",1:p))
+
+    Z1 <- Z
+    Z1[,1] <- Z[,1] + 0.5*Z[,1]*Z[,2]
+    s1 <- Z1[,1:nbeta] %*% betas
+    
     
     sub1 <- (s1 >= 0)
     sub2 <- (s1 < 0)
@@ -87,27 +91,19 @@ MySimData <-
     dat$tte <- NA
     
     dat$tte <- exp(mu0 + dat$trt01p * (s1) + alpha0 * rnorm(N))
-    
-    
-    
+
     analysistime <- enrollment + follow
     
     ## Simulate Censoring ##
     dat$cnsr <- rexp(N, eta)
     dat$edt <- dat$stdt + dat$tte
-    dat$evnt <- as.integer(dat$tte <= dat$cnsr &
-                             dat$edt <= analysistime)
-    #dat$evnt <- as.integer(dat$tte<=analysistime)
+    dat$evnt <- as.integer(dat$tte <= dat$cnsr &dat$edt <= analysistime)
     dat$aval <- NA
     dat$aval[dat$evnt == 1] <- dat$tte[dat$evnt == 1]
-    dat$aval[dat$evnt == 0 &
-               dat$cnsr <= (analysistime - dat$stdt)] <-
+    dat$aval[dat$evnt == 0 & dat$cnsr <= (analysistime - dat$stdt)] <-
       dat$cnsr[dat$evnt == 0 & dat$cnsr <= (analysistime - dat$stdt)]
-    dat$aval[dat$evnt == 0 &
-               dat$cnsr > (analysistime - dat$stdt)] <-
-      analysistime - dat$stdt[dat$evnt == 0 &
-                                dat$cnsr > (analysistime - dat$stdt)]
-    #dat$aval <- ifelse(dat$evnt==1,dat$tte,analysistime)
+    dat$aval[dat$evnt == 0 & dat$cnsr > (analysistime - dat$stdt)] <-
+      analysistime - dat$stdt[dat$evnt == 0 & dat$cnsr > (analysistime - dat$stdt)]
     dat.old <- dat
     dat.old$otr <- as.factor(otr)
     dat <- dat[, c('trt01p', 'evnt', 'aval')]
@@ -151,5 +147,5 @@ data.simulation <-
     alpha0 = 0.4,
     eta = -log(.9) / 12,
     mu0 = sqrt(6),
-    betas = c(1, 1, 1/3, 1/3, 1/3)*3
+    betas = 5:1
   )

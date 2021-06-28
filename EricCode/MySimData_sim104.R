@@ -155,5 +155,5 @@ data.simulation <-
     alpha0 = 0.4,
     eta = -log(.9) / 12,
     mu0 = sqrt(6),
-    betas = c(1,1,.3,.3,.3)*3
+    betas = c(1, 1, 1/3, 1/3, 1/3)*3
   )

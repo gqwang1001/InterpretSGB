@@ -56,8 +56,8 @@ MySimData <-function(N,M,enrollment,follow,lambda0,p,rho,alpha0,eta,mu1,mu2,mu0)
   dat$stdt <- runif(n=N, min=0, max=enrollment)
   
   ## Simulate Z ##
-  cov.z  <- (1-rho)*diag(rep(1,(p+2) )) + rho*rep(1,  (p+2) )%*%t(rep(1,  (p+2) ))
-  Z <- mvrnorm(n = N, mu=rep(0, (p+2)  ), Sigma=cov.z, tol = 1e-6)
+  cov.z  <- (1-rho)*diag(rep(1,(p+2) )) + rho*rep(1,(p+2))%*%t(rep(1,(p+2)))
+  Z <- mvrnorm(n = N, mu=rep(0, (p+2)), Sigma=cov.z, tol = 1e-6)
 
   s1 <- Z[,1]
   s2 <- Z[,2]

@@ -71,10 +71,8 @@ MySimData <-function(N,M,enrollment,follow,lambda0,p,rho,alpha0,eta,mu0){
   
   dat$tte<-NA
 
-  dat$tte <- exp( mu0 + 2*dat$trt01p*(  (exp(-s1^2)-0.4)* ( 1*(s1>=-0.67 & s1<0.67) )  + (exp(-s1^2)-0.8)*(1*(s1<(-0.67) | s1>=0.67))     ) + alpha0*rnorm(N))
-
-  
-  
+  dat$tte <- exp(mu0 + 2*dat$trt01p*((exp(-s1^2)-0.4)* ( 1*(s1>=-0.67 & s1<0.67) )  + (exp(-s1^2)-0.8)*(1*(s1<(-0.67) | s1>=0.67))) + 
+                    alpha0*rnorm(N))
 
   analysistime <- enrollment+follow
   
