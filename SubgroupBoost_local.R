@@ -3,21 +3,10 @@ SubgroupBoost.RMST_local <-
   {
     N <- nrow(dat)
     labels <- rep(NA, N)
-    labels[dat$trt01p == 1 &
-             dat$evnt == 1] <- -1000 - dat$aval[dat$trt01p ==
-                                                  1 &
-                                                  dat$evnt == 1]
-    labels[dat$trt01p == 1 &
-             dat$evnt == 0] <- -1 - dat$aval[dat$trt01p ==
-                                               1 &
-                                               dat$evnt == 0]
-    labels[dat$trt01p == 0 &
-             dat$evnt == 1] <- 1000 + dat$aval[dat$trt01p ==
-                                                 0 &
-                                                 dat$evnt == 1]
-    labels[dat$trt01p == 0 & dat$evnt == 0] <- dat$aval[dat$trt01p ==
-                                                          0 &
-                                                          dat$evnt == 0]
+    labels[dat$trt01p == 1 & dat$evnt == 1] <- -1000 - dat$aval[dat$trt01p ==1 & dat$evnt == 1]
+    labels[dat$trt01p == 1 & dat$evnt == 0] <- -1 - dat$aval[dat$trt01p == 1 & dat$evnt == 0]
+    labels[dat$trt01p == 0 & dat$evnt == 1] <- 1000 + dat$aval[dat$trt01p == 0 & dat$evnt == 1]
+    labels[dat$trt01p == 0 & dat$evnt == 0] <- dat$aval[dat$trt01p == 0 & dat$evnt == 0]
     dat$evnt <- NULL
     dat$aval <- NULL
     dat$trt01p <- NULL
@@ -30,13 +19,9 @@ SubgroupBoost.RMST_local <-
       trt01p[labels >= 0] <- 0
       evnt[abs(labels) >= (1000)] <- 1
       evnt[abs(labels) < (1000)] <- 0
-      aval[abs(labels) >= (1000)] <- abs(labels[abs(labels) >=
-                                                  (1000)]) - 1000
-      aval[labels < 0 & labels > -1000] <- -labels[labels <
-                                                     0 &
-                                                     labels > -1000] - 1
-      aval[labels >= 0 & labels < 1000] <- labels[labels >=
-                                                    0 & labels < 1000]
+      aval[abs(labels) >= (1000)] <- abs(labels[abs(labels) >= (1000)]) - 1000
+      aval[labels < 0 & labels > -1000] <- -labels[labels < 0 &  labels > -1000] - 1
+      aval[labels >= 0 & labels < 1000] <- labels[labels >= 0 & labels < 1000]
       arm.val <- c(1, 0)
       km.dat <- data.frame(trt01p, evnt, aval)
       n <- dim(km.dat)[1]
@@ -71,88 +56,54 @@ SubgroupBoost.RMST_local <-
         }
         else {
           denom <- subset(km.dat, aval >= utime[i])
-          nume <- subset(km.dat, aval == utime[i] & evnt ==
-                           1)
-          gH1.r1.denom <- sum((denom$trt01p == arm.val[1]) *
-                                denom$pred)
-          gH0.r1.denom <- sum((denom$trt01p == arm.val[2]) *
-                                denom$pred)
-          gH1.r2.denom <- sum((denom$trt01p == arm.val[1]) *
-                                (1 - denom$pred))
-          gH0.r2.denom <- sum((denom$trt01p == arm.val[2]) *
-                                (1 - denom$pred))
+          nume <- subset(km.dat, aval == utime[i] & evnt == 1)
+          gH1.r1.denom <- sum((denom$trt01p == arm.val[1]) *  denom$pred)
+          gH0.r1.denom <- sum((denom$trt01p == arm.val[2]) *  denom$pred)
+          gH1.r2.denom <- sum((denom$trt01p == arm.val[1]) *  (1 - denom$pred))
+          gH0.r2.denom <- sum((denom$trt01p == arm.val[2]) *  (1 - denom$pred))
           if (gH1.r1.denom > 0) {
-            H1.r1 <- H1.r1 + sum((nume$trt01p == arm.val[1]) *
-                                   (nume$evnt == 1) * nume$pred) / gH1.r1.denom
-            gH1.r1 <- gH1.r1 + (((km.dat$aval == utime[i]) *
-                                   (km.dat$trt01p == arm.val[1]) * (km.dat$evnt ==
-                                                                      1) * sum((denom$trt01p == arm.val[1]) *
-                                                                                 denom$pred)
-            ) - (
-              sum((nume$trt01p == arm.val[1]) *
-                    (nume$evnt == 1) * nume$pred) * (km.dat$aval >=
-                                                       utime[i]) * (km.dat$trt01p == arm.val[1])
-            )) / gH1.r1.denom ^ 2
+            H1.r1 <- H1.r1 + sum((nume$trt01p == arm.val[1]) * (nume$evnt == 1) * nume$pred) / gH1.r1.denom
+            gH1.r1 <- gH1.r1 + (((km.dat$aval == utime[i]) *(km.dat$trt01p == arm.val[1]) * (km.dat$evnt == 1) * sum((denom$trt01p == arm.val[1]) * denom$pred)) -
+                                  (sum((nume$trt01p == arm.val[1]) * (nume$evnt == 1) * nume$pred) * (km.dat$aval >= utime[i]) * (km.dat$trt01p == arm.val[1]))) / 
+              gH1.r1.denom ^ 2
           }
           if (gH0.r1.denom > 0) {
-            H0.r1 <- H0.r1 + sum((nume$trt01p == arm.val[2]) *
-                                   (nume$evnt == 1) * nume$pred) / gH0.r1.denom
+            H0.r1 <- H0.r1 + sum((nume$trt01p == arm.val[2]) *  (nume$evnt == 1) * nume$pred) / gH0.r1.denom
             gH0.r1 <- gH0.r1 + (((km.dat$aval == utime[i]) *
-                                   (km.dat$trt01p == arm.val[2]) * (km.dat$evnt ==
-                                                                      1) * sum((denom$trt01p == arm.val[2]) *
-                                                                                 denom$pred)
+                                   (km.dat$trt01p == arm.val[2]) * (km.dat$evnt == 1) * sum((denom$trt01p == arm.val[2]) * denom$pred)
             ) - (
-              sum((nume$trt01p == arm.val[2]) *
-                    (nume$evnt == 1) * nume$pred) * (km.dat$aval >=
-                                                       utime[i]) * (km.dat$trt01p == arm.val[2])
+              sum((nume$trt01p == arm.val[2]) * (nume$evnt == 1) * nume$pred) * (km.dat$aval >= utime[i]) * (km.dat$trt01p == arm.val[2])
             )) / gH0.r1.denom ^ 2
           }
           if (gH1.r2.denom > 0) {
-            H1.r2 <- H1.r2 + sum((nume$trt01p == arm.val[1]) *
-                                   (nume$evnt == 1) * (1 - nume$pred)) / gH1.r2.denom
+            H1.r2 <- H1.r2 + sum((nume$trt01p == arm.val[1]) * (nume$evnt == 1) * (1 - nume$pred)) / gH1.r2.denom
             gH1.r2 <- gH1.r2 + ((
-              -1 * (km.dat$aval ==
-                      utime[i]) * (km.dat$trt01p == arm.val[1]) *
-                (km.dat$evnt == 1) * sum((denom$trt01p ==
-                                            arm.val[1]) * (1 - denom$pred))
+              -1 * (km.dat$aval == utime[i]) * (km.dat$trt01p == arm.val[1]) *
+                (km.dat$evnt == 1) * sum((denom$trt01p ==  arm.val[1]) * (1 - denom$pred))
             ) - (
-              sum((nume$trt01p ==
-                     arm.val[1]) * (nume$evnt == 1) * (1 - nume$pred)
+              sum((nume$trt01p == arm.val[1]) * (nume$evnt == 1) * (1 - nume$pred)
               ) *
-                (-1) * (km.dat$aval >= utime[i]) * (km.dat$trt01p ==
-                                                      arm.val[1])
+                (-1) * (km.dat$aval >= utime[i]) * (km.dat$trt01p ==  arm.val[1])
             )) / gH1.r2.denom ^ 2
           }
           if (gH0.r2.denom > 0) {
-            H0.r2 <- H0.r2 + sum((nume$trt01p == arm.val[2]) *
-                                   (nume$evnt == 1) * (1 - nume$pred)) / gH0.r2.denom
+            H0.r2 <- H0.r2 + sum((nume$trt01p == arm.val[2]) * (nume$evnt == 1) * (1 - nume$pred)) / gH0.r2.denom
             gH0.r2 <- gH0.r2 + ((
-              -1 * (km.dat$aval ==
-                      utime[i]) * (km.dat$trt01p == arm.val[2]) *
-                (km.dat$evnt == 1) * sum((denom$trt01p ==
-                                            arm.val[2]) * (1 - denom$pred))
+              -1 * (km.dat$aval == utime[i]) * (km.dat$trt01p == arm.val[2]) *
+                (km.dat$evnt == 1) * sum((denom$trt01p == arm.val[2]) * (1 - denom$pred))
             ) - (
-              sum((nume$trt01p ==
-                     arm.val[2]) * (nume$evnt == 1) * (1 - nume$pred)
+              sum((nume$trt01p == arm.val[2]) * (nume$evnt == 1) * (1 - nume$pred)
               ) *
-                (-1) * (km.dat$aval >= utime[i]) * (km.dat$trt01p ==
-                                                      arm.val[2])
+                (-1) * (km.dat$aval >= utime[i]) * (km.dat$trt01p == arm.val[2])
             )) / gH0.r2.denom ^ 2
           }
         }
-        rmst.diff.r1 <- rmst.diff.r1 + (exp(-H1.r1) - exp(-H0.r1)) *
-          dt[i + 1]
-        rmst.diff.r2 <- rmst.diff.r2 + (exp(-H1.r2) - exp(-H0.r2)) *
-          dt[i + 1]
-        rmst.diff.r1.g <- rmst.diff.r1.g + (-(exp(-H1.r1) *
-                                                gH1.r1) + (exp(-H0.r1) * gH0.r1)) * dt[i + 1]
-        rmst.diff.r2.g <- rmst.diff.r2.g + (-(exp(-H1.r2) *
-                                                gH1.r2) + (exp(-H0.r2) * gH0.r2)) * dt[i + 1]
+        rmst.diff.r1 <- rmst.diff.r1 + (exp(-H1.r1) - exp(-H0.r1)) * dt[i + 1]
+        rmst.diff.r2 <- rmst.diff.r2 + (exp(-H1.r2) - exp(-H0.r2)) * dt[i + 1]
+        rmst.diff.r1.g <- rmst.diff.r1.g + (-(exp(-H1.r1) * gH1.r1) + (exp(-H0.r1) * gH0.r1)) * dt[i + 1]
+        rmst.diff.r2.g <- rmst.diff.r2.g + (-(exp(-H1.r2) * gH1.r2) + (exp(-H0.r2) * gH0.r2)) * dt[i + 1]
       }
-      g.p <- (
-        sum(km.dat$pred) * rmst.diff.r1.g + rmst.diff.r1 -
-          sum(1 - km.dat$pred) * rmst.diff.r2.g + rmst.diff.r2
-      )
+      g.p <- (sum(km.dat$pred) * rmst.diff.r1.g + rmst.diff.r1 - sum(1 - km.dat$pred) * rmst.diff.r2.g + rmst.diff.r2)
       g <- km.dat$predg * (-1) * g.p
       g <- g[order(km.dat$id)]
       h <- rep(1e-05, n)
@@ -167,13 +118,9 @@ SubgroupBoost.RMST_local <-
       trt01p[labels >= 0] <- 0
       evnt[abs(labels) >= (1000)] <- 1
       evnt[abs(labels) < (1000)] <- 0
-      aval[abs(labels) >= (1000)] <- abs(labels[abs(labels) >=
-                                                  (1000)]) - 1000
-      aval[labels < 0 & labels > -1000] <- -labels[labels <
-                                                     0 &
-                                                     labels > -1000] - 1
-      aval[labels >= 0 & labels < 1000] <- labels[labels >=
-                                                    0 & labels < 1000]
+      aval[abs(labels) >= (1000)] <- abs(labels[abs(labels) >= (1000)]) - 1000
+      aval[labels < 0 & labels > -1000] <- -labels[labels < 0 &labels > -1000] - 1
+      aval[labels >= 0 & labels < 1000] <- labels[labels >=  0 & labels < 1000]
       arm.val <- c(1, 0)
       km.dat <- data.frame(trt01p, evnt, aval)
       km.dat$pred <- 1 / (1 + exp(-preds))
@@ -192,40 +139,28 @@ SubgroupBoost.RMST_local <-
         }
         else {
           denom <- subset(km.dat, aval >= utime[i])
-          nume <- subset(km.dat, aval == utime[i] & evnt ==
-                           1)
-          gH1.r1.denom <- sum((denom$trt01p == arm.val[1]) *
-                                denom$pred)
-          gH0.r1.denom <- sum((denom$trt01p == arm.val[2]) *
-                                denom$pred)
-          gH1.r2.denom <- sum((denom$trt01p == arm.val[1]) *
-                                (1 - denom$pred))
-          gH0.r2.denom <- sum((denom$trt01p == arm.val[2]) *
-                                (1 - denom$pred))
+          nume <- subset(km.dat, aval == utime[i] & evnt ==1)
+          gH1.r1.denom <- sum((denom$trt01p == arm.val[1]) * denom$pred)
+          gH0.r1.denom <- sum((denom$trt01p == arm.val[2]) * denom$pred)
+          gH1.r2.denom <- sum((denom$trt01p == arm.val[1]) * (1 - denom$pred))
+          gH0.r2.denom <- sum((denom$trt01p == arm.val[2]) * (1 - denom$pred))
           if (gH1.r1.denom > 0) {
-            H1.r1 <- H1.r1 + sum((nume$trt01p == arm.val[1]) *
-                                   (nume$evnt == 1) * nume$pred) / gH1.r1.denom
+            H1.r1 <- H1.r1 + sum((nume$trt01p == arm.val[1]) * (nume$evnt == 1) * nume$pred) / gH1.r1.denom
           }
           if (gH0.r1.denom > 0) {
-            H0.r1 <- H0.r1 + sum((nume$trt01p == arm.val[2]) *
-                                   (nume$evnt == 1) * nume$pred) / gH0.r1.denom
+            H0.r1 <- H0.r1 + sum((nume$trt01p == arm.val[2]) *(nume$evnt == 1) * nume$pred) / gH0.r1.denom
           }
           if (gH1.r2.denom > 0) {
-            H1.r2 <- H1.r2 + sum((nume$trt01p == arm.val[1]) *
-                                   (nume$evnt == 1) * (1 - nume$pred)) / gH1.r2.denom
+            H1.r2 <- H1.r2 + sum((nume$trt01p == arm.val[1]) * (nume$evnt == 1) * (1 - nume$pred)) / gH1.r2.denom
           }
           if (gH0.r2.denom > 0) {
-            H0.r2 <- H0.r2 + sum((nume$trt01p == arm.val[2]) *
-                                   (nume$evnt == 1) * (1 - nume$pred)) / gH0.r2.denom
+            H0.r2 <- H0.r2 + sum((nume$trt01p == arm.val[2]) * (nume$evnt == 1) * (1 - nume$pred)) / gH0.r2.denom
           }
         }
-        rmst.diff.r1 <- rmst.diff.r1 + (exp(-H1.r1) - exp(-H0.r1)) *
-          dt[i + 1]
-        rmst.diff.r2 <- rmst.diff.r2 + (exp(-H1.r2) - exp(-H0.r2)) *
-          dt[i + 1]
+        rmst.diff.r1 <- rmst.diff.r1 + (exp(-H1.r1) - exp(-H0.r1)) * dt[i + 1]
+        rmst.diff.r2 <- rmst.diff.r2 + (exp(-H1.r2) - exp(-H0.r2)) * dt[i + 1]
       }
-      err <- (-1) * (sum(km.dat$pred) * rmst.diff.r1 - sum(1 -
-                                                             km.dat$pred) * rmst.diff.r2)
+      err <- (-1) * (sum(km.dat$pred) * rmst.diff.r1 - sum(1 -  km.dat$pred) * rmst.diff.r2)
       return(list(metric = "OTR_error", value = err))
     }
     hyper_grid <- expand.grid(
