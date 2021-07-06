@@ -80,5 +80,5 @@ evalueLoss <- function(preds, dat) {
   }
   err <-
     (-1) * (sum(km.dat$pred) * rmst.diff.r1 - sum(1 -  km.dat$pred) * rmst.diff.r2)
-  return(list(OTR_error = err))
+  return(err)
 }

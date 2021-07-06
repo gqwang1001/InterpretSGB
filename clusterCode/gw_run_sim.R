@@ -33,7 +33,8 @@ for (iseeds in (seeds - 1) * nrep + (1:nrep)) {
       datalist = data.simulation,
       cutoff = 0.95,
       # plot.name = paste0("Results/", simIdx,"_simplified_tree.png"),
-      seed = iseeds
+      seed = iseeds,
+      top3 = F
     )
     saveRDS(object = spltree,
             file = paste0(saveDir, "/", iseeds, ".rds"))

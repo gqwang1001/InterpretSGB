@@ -3,7 +3,7 @@ expit = function(logodds)
   1 / (1 + exp(-logodds))
 source("InterpretSGB/simplified.Tree.R")
 simList = paste0("sim", c(108,105, 106,107,101,102,103,104, 32, 42, 43, 62, 7, 8))
-seeds = 79
+seeds = 2
 # Train model -------------------------------------------------------------
 
 for (i in 1:6) {
@@ -46,6 +46,7 @@ for (i in 1:6) {
   spltree$evalLoss.lm.train
   spltree$evalLoss.spltree.train
   
+  
   spltree$imporant_variables
   spltree$imporant_variables_sptree
   spltree$imporant_variables_sptree_gain
@@ -53,14 +54,15 @@ for (i in 1:6) {
   spltree$RMSE.lm
   spltree$RMSE.spltree
   
-  
+  spltree$RMSE.lm.train
+  spltree$RMSE.spltree.train
+
   spltree$summaryPred.lm$accuracy
   spltree$summaryPred.splTree.shap$accuracy
   spltree$summaryPred.splTree.gain$accuracy
   spltree$summaryPred.xgb$accuracy
   spltree$acc.comp.lm
   spltree$acc.comp.splTreeVsxgb
-
 
   spltree$imporant_variables_xgb_all
   

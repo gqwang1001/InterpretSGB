@@ -1,3 +1,4 @@
+
 simplified.Tree = function(model,
                            datalist,
                            cutoff = 0.8,
@@ -21,8 +22,7 @@ simplified.Tree = function(model,
     plot = F
   )
   shapresults <- colMeans(abs(shapPlotPKG$shap_contrib))
-  shap_cumsum <-
-    cumsum(sort(shapresults, decreasing = T) / sum(shapresults))
+  shap_cumsum <- cumsum(sort(shapresults, decreasing = T) / sum(shapresults))
   valNames <- names(shap_cumsum)
   imp.val <- valNames[which(shap_cumsum < cutoff)]
   
@@ -36,11 +36,10 @@ simplified.Tree = function(model,
   if (length(imp.val) == 1)
     imp.val = valNames[1:2]
   
-  dataInPred <- data.frame(shapPlotPKG$data[, imp.val],
-                           logOdds = rowSums(shapPlotPKG$shap_contrib))
+  pred.xgb.train =predict(model, as.matrix(datalist[[1]][, model$feature_names]), outputmargin = TRUE)
+  dataInPred <- data.frame(datalist[[1]][, imp.val], logOdds = pred.xgb.train)
   # fit decision tree -------------------------------------------------------
-  dataInPred.gain <- data.frame(shapPlotPKG$data[, imp.gain.top],
-                                logOdds = rowSums(shapPlotPKG$shap_contrib))
+  dataInPred.gain <- data.frame(datalist[[1]][, imp.gain.top], logOdds = pred.xgb.train)
   trctrl <-
     trainControl(method = "repeatedcv",
                  number = 10,
@@ -53,7 +52,7 @@ simplified.Tree = function(model,
     trControl = trctrl,
     tuneLength = 3
   )
-  
+  set.seed(seed)
   dtree_fit_gain <- train(
     logOdds ~ .,
     data = dataInPred.gain,
@@ -72,34 +71,40 @@ simplified.Tree = function(model,
   
   pred.simple = predict(dtree_fit, datalist[[2]])
   pred.simple.gain = predict(dtree_fit_gain, datalist[[2]])
+  pred.xgb =predict(model, as.matrix(datalist[[2]][, model$feature_names]), outputmargin = T)
+
+  # prediction on training data
+  pred.simple.train = predict(dtree_fit, datalist[[1]])
+  pred.simple.gain.train  = predict(dtree_fit_gain, datalist[[1]])
   
-  pred.xgb <-
-    predict(model, as.matrix(datalist[[2]][, model$feature_names]))
+    
+  rmse.splTreeVsxgb =  Rsquare(pred.simple, pred.xgb)
+  rmse.splTreeVsxgb.train = Rsquare(pred.simple.train, pred.xgb.train)
   
-  rmse.splTreeVsxgb =  RMSE(pred.simple, pred.xgb)
   summaryPred.splTree.shap = summaryPred(pred.simple, datalist)
   summaryPred.splTree.gain = summaryPred(pred.simple.gain, datalist)
   summaryPred.xgb = summaryPred(pred.xgb, datalist)
   
-  acc.comp.splTreeVsxgb = 2 * sum(1 * (((pred.simple > 0) == (pred.xgb > 0)))) /
-    (length(pred.simple) + length(pred.xgb))
+  acc.comp.splTreeVsxgb = 2 * sum(1 * (((pred.simple > 0) == (pred.xgb > 0)))) / (length(pred.simple) + length(pred.xgb))
+  acc.comp.splTreeVsxgb.train = 2 * sum(1 * (((pred.simple.train> 0) == (pred.xgb.train > 0)))) / (length(pred.simple.train) + length(pred.xgb.train))
   
   # fit linear regression model ---------------------------------------------
   fit.lm.full = lm(data = dataInPred, logOdds ~ .)
   fit.lm = step(fit.lm.full, trace = 0)
-  
+  pred.lm.train = predict(fit.lm, datalist[[1]])
   pred.lm = predict(fit.lm, datalist[[2]])
-  acc.comp.lm = 2 * sum(1 * (((pred.lm > 0) == (pred.xgb > 0)))) /
-    (length(pred.lm) + length(pred.xgb))
-  rmse.lmVsxgb =  RMSE(pred.lm, pred.xgb)
+  acc.comp.lm = 2 * sum(1 * (((pred.lm > 0) == (pred.xgb > 0)))) / (length(pred.lm) + length(pred.xgb))
+  acc.comp.lm.train = 2 * sum(1 * (((pred.lm.train > 0) == (pred.xgb.train > 0)))) / (length(pred.lm.train) + length(pred.xgb.train))
+  
+  rmse.lmVsxgb = Rsquare(pred.lm, pred.xgb)
+  rmse.lmVsxgb.train = Rsquare(pred.lm.train, pred.xgb.train)
   summaryPred.lm = summaryPred(pred.lm, datalist)
   
-  evalLoss.lm.train = evalueLoss(preds = predict(fit.lm, datalist[[1]]), dat = datalist[[1]])
-  evalLoss.spltree.train = evalueLoss(preds = predict(dtree_fit, datalist[[1]]), dat = datalist[[1]])
+  evalLoss.lm.train = lossRatio(pred.lm.train, pred.xgb.train, datalist[[1]])
+  evalLoss.spltree.train = lossRatio(pred.simple.train, pred.xgb.train, datalist[[1]])
   
-  
-  evalLoss.lm = evalueLoss(preds = pred.lm, dat = datalist[[2]])
-  evalLoss.spltree = evalueLoss(preds = pred.simple, dat = datalist[[2]])
+  evalLoss.lm = lossRatio(pred.lm,pred.xgb, datalist[[2]])
+  evalLoss.spltree = lossRatio(pred.simple,pred.xgb, datalist[[2]])
   
   return(
     list(
@@ -118,11 +123,17 @@ simplified.Tree = function(model,
       summaryPred.splTree.gain = summaryPred.splTree.gain,
       
       acc.comp.splTreeVsxgb = acc.comp.splTreeVsxgb,
+      acc.comp.splTreeVsxgb.train = acc.comp.splTreeVsxgb.train,
+      
       RMSE.spltree = rmse.splTreeVsxgb,
+      RMSE.spltree.train = rmse.splTreeVsxgb.train,
       
       lm_pred = pred.lm,
       acc.comp.lm = acc.comp.lm,
+      acc.comp.lm.train = acc.comp.lm.train,
+      
       RMSE.lm = rmse.lmVsxgb,
+      RMSE.lm.train = rmse.lmVsxgb.train,
       summaryPred.lm = summaryPred.lm,
       lmModel = fit.lm,
       
@@ -141,6 +152,14 @@ summaryPred = function(pred, datalist) {
     sensitivity = sum(pred >= 0 & datalist[[4]] == 1) / sum(datalist[[4]] == 1),
     specificity = sum(pred < 0 & datalist[[4]] == 0) / sum(datalist[[4]] == 0)
   ))
+}
+
+Rsquare = function(m.s, m.full){
+  return( sum((m.s-m.full)^2)/sum((m.full-mean(m.full))^2) )  
+}
+  
+lossRatio = function(preds.s,preds.full, dat){
+  return(evalueLoss(as.vector(preds.s), dat)/evalueLoss(as.vector(preds.full), dat))
 }
 
 evalueLoss <- function(preds, dat) {
@@ -225,5 +244,5 @@ evalueLoss <- function(preds, dat) {
   }
   err <-
     (-1) * (sum(km.dat$pred) * rmst.diff.r1 - sum(1 -  km.dat$pred) * rmst.diff.r2)
-  return(list(OTR_error = err))
+  return(err)
 }
