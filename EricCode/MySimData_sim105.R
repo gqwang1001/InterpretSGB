@@ -121,14 +121,16 @@ MySimData <-
     #km_subgroup(dat.old,'otr')
     dat$aval[dat$aval == 0] <- 0.001
     ## Split dat to training and test ##
-    train.dat <- dat[(1:M), ]
-    test.dat <- dat[(M + 1):N, ]
+    trainIdx = sample(1:N, size = M, replace = F)
+    train.dat <- dat[trainIdx, ]
+    test.dat <- dat[-trainIdx, ]
     
     ## compute OTR for each subject ##
     #otr.ind <- c(1*(otr<0))
     otr.ind <- otr
-    otr.train <- otr.ind[1:M]
-    otr.test <- otr.ind[(M + 1):N]
+    otr.train <- otr.ind[trainIdx]
+    otr.test <- otr.ind[-trainIdx]
+    
     
     
     return(list(train.dat, test.dat, otr.train, otr.test))

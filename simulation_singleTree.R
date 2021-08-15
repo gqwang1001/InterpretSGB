@@ -2,8 +2,9 @@ library(SubgroupBoost)
 expit = function(logodds)
   1 / (1 + exp(-logodds))
 source("InterpretSGB/simplified.Tree.R")
+source("InterpretSGB/SubgroupBoost_local.R")
 simList = paste0("sim", c(108,105, 106,107,101,102,103,104, 32, 42, 43, 62, 7, 8))
-seeds = 2
+seeds = 1
 # Train model -------------------------------------------------------------
 
 for (i in 1:6) {
@@ -22,14 +23,9 @@ for (i in 1:6) {
   print(simIdx)
   set.seed(seeds)
   source(paste0("InterpretSGB/EricCode/MySimData_", simIdx, ".R"))
+  
   model = readRDS(paste0("Results/modelFitting_", simIdx, ".rds"))
-  imp <- xgb.importance(model$feature_names, model)
-  imp
-  # imp # finds s1 s2
-  # xgb.plot.importance(imp, main = "Importance Plot by Gain")
-  # xgb.plot.tree(model = model,
-  #               trees = 0:5,
-  #               show_node_id = TRUE)
+  
   spltree = simplified.Tree(
     model = model,
     datalist = data.simulation,
@@ -41,32 +37,17 @@ for (i in 1:6) {
   
   # saveRDS(spltree, file = paste0("Results/", simIdx,"/", seeds,".rds"))
   # saveRDS(spltree, file = paste0("Results/", seeds,".rds"))
-  spltree$evalLoss.lm
-  spltree$evalLoss.spltree
+  spltree$summaryPred.xgb$accuracy
+  spltree$summaryPred.lm$accuracy
+  spltree$summaryPred.splTree.shap$accuracy
+  
   spltree$evalLoss.lm.train
   spltree$evalLoss.spltree.train
   
+  spltree$evalLoss.lm.test
+  spltree$evalLoss.spltree.test
   
-  spltree$imporant_variables
-  spltree$imporant_variables_sptree
-  spltree$imporant_variables_sptree_gain
-  
-  spltree$RMSE.lm
-  spltree$RMSE.spltree
-  
-  spltree$RMSE.lm.train
-  spltree$RMSE.spltree.train
-
-  spltree$summaryPred.lm$accuracy
-  spltree$summaryPred.splTree.shap$accuracy
-  spltree$summaryPred.splTree.gain$accuracy
-  spltree$summaryPred.xgb$accuracy
-  spltree$acc.comp.lm
-  spltree$acc.comp.splTreeVsxgb
-
-  spltree$imporant_variables_xgb_all
-  
-    finaltree = spltree$simplified_tree$finalModel
+  finaltree = spltree$simplified_tree$finalModel
   split.var = unique(finaltree$frame$var[finaltree$frame$var!="<leaf>"])
   
   rattle::fancyRpartPlot(finaltree)
