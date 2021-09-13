@@ -4,6 +4,12 @@ simplified.Tree = function(model,
                            plot.name = NaN,
                            seed = 1,
                            top3 = T) {
+  
+  # model: the model output from the XGboost
+  # datalist: the data used for fitting the XGboost model.
+  # plot.name: if NaN, no figure is plotted, else show figure with the given name.
+  # top3: logic: whether the top 3 features are restricted. 
+  
   require(caret)
   # require(rpart.plot)
   # require(rattle)
